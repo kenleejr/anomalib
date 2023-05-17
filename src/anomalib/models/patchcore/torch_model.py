@@ -17,6 +17,13 @@ from anomalib.models.components import (
 from anomalib.models.patchcore.anomaly_map import AnomalyMapGenerator
 from anomalib.pre_processing import Tiler
 
+def my_cdist(x1, x2):
+    x1_norm = x1.pow(2).sum(dim=-1, keepdim=True)
+    x2_norm = x2.pow(2).sum(dim=-1, keepdim=True)
+    res = x1_norm - 2 * torch.matmul(x1,x2.transpose(-2,-1)) + x2_norm.transpose(-2, -1)
+    res = res.clamp_min_(0).sqrt_()
+    return res
+
 
 class PatchcoreModel(DynamicBufferModule, nn.Module):
     """Patchcore Module."""
@@ -153,7 +160,7 @@ class PatchcoreModel(DynamicBufferModule, nn.Module):
             Tensor: Patch scores.
             Tensor: Locations of the nearest neighbor(s).
         """
-        distances = torch.cdist(embedding, self.memory_bank, p=2.0)  # euclidean norm
+        distances = my_cdist(embedding, self.memory_bank)  # euclidean norm
         if n_neighbors == 1:
             # when n_neighbors is 1, speed up computation by using min instead of topk
             patch_scores, locations = distances.min(1)
