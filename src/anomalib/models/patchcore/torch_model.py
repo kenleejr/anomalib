@@ -160,7 +160,7 @@ class PatchcoreModel(DynamicBufferModule, nn.Module):
             Tensor: Patch scores.
             Tensor: Locations of the nearest neighbor(s).
         """
-        distances = torch.cdist(embedding, self.memory_bank, p=2.0)  # euclidean norm
+        distances = my_cdist(embedding, self.memory_bank)
         if n_neighbors == 1:
             # when n_neighbors is 1, speed up computation by using min instead of topk
             patch_scores, locations = distances.min(1)
@@ -195,7 +195,7 @@ class PatchcoreModel(DynamicBufferModule, nn.Module):
         # indices of N_b(m^*) in the paper
         _, support_samples = self.nearest_neighbors(nn_sample, n_neighbors=self.num_neighbors)
         # 4. Find the distance of the patch features to each of the support samples
-        distances = my_cdist(max_patches_features, self.memory_bank[support_samples].squeeze())
+        distances = torch.cdist(max_patches_features.unsqueeze(1), self.memory_bank[support_samples], p=2.0)
         # 5. Apply softmax to find the weights
         weights = (1 - F.softmax(distances.squeeze(1), 1))[..., 0]
         # 6. Apply the weight factor to the score
