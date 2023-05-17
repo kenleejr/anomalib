@@ -195,7 +195,7 @@ class PatchcoreModel(DynamicBufferModule, nn.Module):
         # indices of N_b(m^*) in the paper
         _, support_samples = self.nearest_neighbors(nn_sample, n_neighbors=self.num_neighbors)
         # 4. Find the distance of the patch features to each of the support samples
-        distances = torch.cdist(max_patches_features.unsqueeze(1), self.memory_bank[support_samples], p=2.0)
+        distances = my_cdist(max_patches_features, self.memory_bank[support_samples].squeeze())
         # 5. Apply softmax to find the weights
         weights = (1 - F.softmax(distances.squeeze(1), 1))[..., 0]
         # 6. Apply the weight factor to the score
